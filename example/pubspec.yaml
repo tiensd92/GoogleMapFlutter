@@ -1,4 +1,4 @@
-name: googlemapflutter_example
+name: google_map_flutter_example
 description: Demonstrates how to use the googlemapflutter plugin.
 
 # The following defines the version and build number for your application.
@@ -24,7 +24,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  googlemapflutter:
+  google_map_flutter:
     path: ../
 
 # For information on the generic Dart part of this file, see the

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:googlemapflutter/map_options.dart';
-import 'package:googlemapflutter/map_view.dart';
+import 'package:google_map_flutter/map_options.dart';
+import 'package:google_map_flutter/map_view.dart';
 
 void main() => runApp(new MyApp());
 
