@@ -13,22 +13,38 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-}
+  }
 
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
       home: new Scaffold(
-		backgroundColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
         appBar: new AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: MapView(
-          onMapReady: (controller){
-            print("Map Ready");
-          },
-          mapOptions: MapOptions(showCompassButton: true, showMyLocationButton: true, showUserLocation: true),
-        ),
+        body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            child: Column(
+              children: <Widget>[
+                Flexible(
+                    child: MapView(
+                        onMapReady: (controller) {
+                            print("Map Ready");
+                        },
+                        mapOptions: MapOptions(
+                                showCompassButton: true,
+                                showMyLocationButton: true,
+                                showUserLocation: true),
+                    ),
+                ),
+                Container(
+                  color: Colors.red,
+                  height: 100.0,
+                )
+              ],
+            )),
       ),
     );
   }

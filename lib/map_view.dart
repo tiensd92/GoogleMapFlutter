@@ -18,7 +18,6 @@ class MapView extends StatefulWidget
     implements ListenerController, GetListener {
   final double width;
   final double height;
-  final EdgeInsets padding;
   Color backgroundColor = Colors.white;
   bool isReady = false;
   bool isLoading = false;
@@ -51,7 +50,6 @@ class MapView extends StatefulWidget
 
   MapView(
       {@required this.mapOptions,
-      this.padding,
       this.width,
       this.height,
       this.backgroundColor,
@@ -403,36 +401,31 @@ class _MapView extends State<MapView> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapUp: (detail) {
-        print('onTapUp');
-      },
-      onTapDown: (detail) {
-        print('onTapDown');
-      },
-      onPanUpdate: (detail) {
-        print('onPanUpdate');
-      },
-      onPanStart: (detail) {
-        print('onPanStart');
-      },
-      onPanCancel: () {
-        print('onPanCancel');
-      },
-      onPanDown: (detail) {
-        print('onPanDown');
-      },
-      onPanEnd: (detail) {
-        print('onPanEnd');
-      },
-      onTapCancel: () {
-        print('onTapCancel');
-      },
-      child: Container(
-        padding: widget.padding,
-        width: widget.width,
-        height: widget.height,
-        color: widget.isReady ? Colors.transparent : widget.backgroundColor,
+    return Container(
+      width: widget.width,
+      height: widget.height,
+      color: widget.isReady ? Colors.transparent : widget.backgroundColor,
+      child: GestureDetector(
+        onTapUp: (detail) {
+          print("touchUp");
+          GoogleMapViewFlutter.channel.invokeMethod('touchUp');
+        },
+        onTapDown: (detail) {
+          print("onTapDown");
+          GoogleMapViewFlutter.channel.invokeMethod('touchDown');
+        },
+        onPanStart: (detail) {
+          print("onPanStart");
+          GoogleMapViewFlutter.channel.invokeMethod('touchDown');
+        },
+        onPanDown: (detail) {
+          print("onPanDown");
+          GoogleMapViewFlutter.channel.invokeMethod('touchDown');
+        },
+        onPanEnd: (detail) {
+          print("onPanEnd");
+          GoogleMapViewFlutter.channel.invokeMethod('touchUp');
+        },
       ),
     );
   }

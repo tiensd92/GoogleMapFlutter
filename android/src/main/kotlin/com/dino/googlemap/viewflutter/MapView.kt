@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.location.Location
 import android.os.Build
 import android.support.v4.content.ContextCompat
+import android.view.MotionEvent
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -21,6 +22,7 @@ class MapView() : OnMapReadyCallback {
     var markerIdLookup = HashMap<String, Marker>()
     var polylineIdLookup = HashMap<String, Polyline>()
     var polygonIdLookup = HashMap<String, Polygon>()
+    private var events : ArrayList<MotionEvent> = ArrayList<MotionEvent>()
     var top: Int = 0
     var left: Int = 0
     var right: Int = 0
@@ -260,6 +262,18 @@ class MapView() : OnMapReadyCallback {
 
         googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(initialCameraPosition))
         GoogleMapViewFlutterPlugin.channel.invokeMethod("onMapReady" , null)
+    }
+
+    fun clearAction() {
+        events.clear()
+    }
+
+    fun addAction(event: MotionEvent) {
+        events.add(event)
+    }
+
+    fun getActions() : ArrayList<MotionEvent> {
+        return events
     }
 
     fun handleSetCamera(map: Map<String, Any>) {

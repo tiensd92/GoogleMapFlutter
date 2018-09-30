@@ -1,6 +1,8 @@
 package com.dino.googlemap.viewflutter
 
 import android.content.Context
+import android.util.Log
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.google.android.gms.common.GoogleApiAvailability
@@ -15,6 +17,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar
 class GoogleMapViewFlutterPlugin : MethodCallHandler {
     private var frameLayout: FrameLayout? = null
     private var mapView: MapView? = null
+    private var mapFragment: TouchSupportMapFragment? = null
     private val mapTypeMapping: HashMap<String, Int> = hashMapOf(
             "none" to GoogleMap.MAP_TYPE_NONE,
             "normal" to GoogleMap.MAP_TYPE_NORMAL,
@@ -85,8 +88,8 @@ class GoogleMapViewFlutterPlugin : MethodCallHandler {
 
                     mapView = MapView(fragmentActivity)
                     mapView?.setPadding(leftMargin, topMargin, rightMargin, bottomMargin)
-                    val mapFragment = TouchSupportMapFragment()
-                    mapFragment.getMapAsync(mapView)
+                    mapFragment = TouchSupportMapFragment()
+                    mapFragment?.getMapAsync(mapView)
 
                     val transaction = fragmentActivity.supportFragmentManager.beginTransaction()
                     transaction.replace(R.id.map_fragment, mapFragment)
@@ -95,9 +98,17 @@ class GoogleMapViewFlutterPlugin : MethodCallHandler {
 
                     fragmentActivity.flutterView.setOnTouchListener { v, event ->
                         //val bmp = fragmentActivity.flutterView.bitmap
+                        Log.v("GoogleMapViewFlutter", "onTouchEvent ${event.action}")
+
+                        if (event.action == MotionEvent.ACTION_DOWN) {
+                            mapView?.clearAction()
+                            mapView?.addAction(event)
+                        } else {
+                            mapView?.addAction(event)
+                        }
 
                         if (MapView.attachTouch) {
-                            mapFragment.mTouchView.dispatchTouchEvent(event)
+                            mapFragment?.mTouchView?.dispatchTouchEvent(event)
                         }
 
                         v.onTouchEvent(event)
@@ -107,6 +118,7 @@ class GoogleMapViewFlutterPlugin : MethodCallHandler {
                     return
                 }
             }
+
             call.method == "dismiss" -> {
                 frameLayout?.let {
                     (it.parent as? ViewGroup)?.removeView(it)
@@ -116,88 +128,123 @@ class GoogleMapViewFlutterPlugin : MethodCallHandler {
                 result.success(true)
                 return
             }
+
             call.method == "getZoomLevel" -> {
                 val zoom = mapView?.zoomLevel
                 result.success(zoom)
             }
+
             call.method == "getCenter" -> {
                 val center = mapView?.target
                 result.success(mapOf("latitude" to center?.latitude,
                         "longitude" to center?.longitude))
             }
+
             call.method == "setCamera" -> {
                 mapView?.handleSetCamera(call.arguments as Map<String, Any>)
                 result.success(true)
             }
+
             call.method == "zoomToAnnotations" -> {
                 mapView?.handleZoomToAnnotations(call.arguments as Map<String, Any>)
                 result.success(true)
             }
+
             call.method == "zoomToPolylines" -> {
                 mapView?.handleZoomToPolylines(call.arguments as Map<String, Any>)
                 result.success(true)
             }
+
             call.method == "zoomToPolygons" -> {
                 mapView?.handleZoomToPolygons(call.arguments as Map<String, Any>)
                 result.success(true)
             }
+
             call.method == "zoomToFit" -> {
                 mapView?.zoomToFit(call.arguments as Int)
                 result.success(true)
             }
+
             call.method == "getVisibleMarkers" -> {
                 val visibleMarkerIds = mapView?.visibleMarkers
                 result.success(visibleMarkerIds)
             }
+
             call.method == "clearAnnotations" -> {
                 mapView?.clearMarkers()
                 result.success(true)
             }
+
             call.method == "setAnnotations" -> {
                 mapView?.handleSetAnnotations(call.arguments as List<Map<String, Any>>)
                 result.success(true)
             }
+
             call.method == "addAnnotation" -> {
                 mapView?.handleAddAnnotation(call.arguments as Map<String, Any>)
             }
+
             call.method == "removeAnnotation" -> {
                 mapView?.handleRemoveAnnotation(call.arguments as Map<String, Any>)
             }
+
             call.method == "getVisiblePolylines" -> {
                 val visiblePolylineIds = mapView?.visiblePolyline
                 result.success(visiblePolylineIds)
             }
+
             call.method == "clearPolylines" -> {
                 mapView?.clearPolylines()
                 result.success(true)
             }
+
             call.method == "setPolylines" -> {
                 mapView?.handleSetPolylines(call.arguments as List<Map<String, Any>>)
                 result.success(true)
             }
+
             call.method == "addPolyline" -> {
                 mapView?.handleAddPolyline(call.arguments as Map<String, Any>)
             }
+
             call.method == "removePolyline" -> {
                 mapView?.handleRemovePolyline(call.arguments as Map<String, Any>)
             }
+
             call.method == "getVisiblePolygons" -> {
                 val visiblePolygonIds = mapView?.visiblePolygon
                 result.success(visiblePolygonIds)
             }
+
             call.method == "clearPolygons" -> {
                 mapView?.clearPolygons()
                 result.success(true)
             }
+
             call.method == "setPolygons" -> {
                 mapView?.handleSetPolygons(call.arguments as List<Map<String, Any>>)
                 result.success(true)
             }
+
             call.method == "addPolygon" -> {
                 mapView?.handleAddPolygon(call.arguments as Map<String, Any>)
             }
+
             call.method == "removePolygon" -> {
                 mapView?.handleRemovePolygon(call.arguments as Map<String, Any>)
+            }
+
+            call.method == "touchUp" -> {
+                MapView.attachTouch = false
+                mapView?.clearAction()
+            }
+
+            call.method == "touchDown" -> {
+                MapView.attachTouch = true
+
+                mapView?.getActions()?.forEach {
+                    mapFragment?.mTouchView?.dispatchTouchEvent(it)
+                }
             }
             else -> result.notImplemented()
         }
