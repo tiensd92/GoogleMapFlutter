@@ -1,4 +1,4 @@
-package com.dino.googlemapflutter
+package com.dino.googlemap.viewflutter
 
 import android.content.Context
 import android.os.Bundle

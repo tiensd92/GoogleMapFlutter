@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_map_flutter/map_options.dart';
-import 'package:google_map_flutter/map_view.dart';
+import 'package:google_map_view_flutter/map_options.dart';
+import 'package:google_map_view_flutter/map_view.dart';
 
 void main() => runApp(new MyApp());
 
@@ -10,7 +10,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   void initState() {
     super.initState();
@@ -25,7 +24,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: MapView(
-          onMapReady: (){
+          onMapReady: (controller){
             print("Map Ready");
           },
           mapOptions: MapOptions(showCompassButton: true, showMyLocationButton: true, showUserLocation: true),

@@ -1,4 +1,4 @@
-package com.dino.googlemapflutter
+package com.dino.googlemap.viewflutter
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -15,7 +15,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import io.flutter.app.FlutterFragmentActivity
 
-class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
+class MapView() : OnMapReadyCallback {
     var googleMap: GoogleMap? = null
     lateinit var activity: FlutterFragmentActivity
     var markerIdLookup = HashMap<String, Marker>()
@@ -31,6 +31,7 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
     }
 
     companion object {
+        var attachTouch : Boolean = false
         var showUserLocation: Boolean = false
         var showMyLocationButton: Boolean = false
         var showCompassButton: Boolean = false
@@ -46,23 +47,23 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         }
 
         fun mapTapped(latLng: LatLng) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("mapTapped",
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("mapTapped",
                     mapOf("latitude" to latLng.latitude,
                             "longitude" to latLng.longitude))
         }
 
         fun mapLongTapped(latLng: LatLng) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("mapLongTapped",
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("mapLongTapped",
                     mapOf("latitude" to latLng.latitude,
                             "longitude" to latLng.longitude))
         }
 
         fun annotationTapped(id: String) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("annotationTapped", id)
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("annotationTapped", id)
         }
 
         fun annotationDragStart(id: String, latLng: LatLng) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("annotationDragStart", mapOf(
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("annotationDragStart", mapOf(
                     "id" to id,
                     "latitude" to latLng.latitude,
                     "longitude" to latLng.longitude
@@ -70,7 +71,7 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         }
 
         fun annotationDragEnd(id: String, latLng: LatLng) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("annotationDragEnd", mapOf(
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("annotationDragEnd", mapOf(
                     "id" to id,
                     "latitude" to latLng.latitude,
                     "longitude" to latLng.longitude
@@ -78,7 +79,7 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         }
 
         fun annotationDrag(id: String, latLng: LatLng) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("annotationDrag", mapOf(
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("annotationDrag", mapOf(
                     "id" to id,
                     "latitude" to latLng.latitude,
                     "longitude" to latLng.longitude
@@ -86,16 +87,16 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         }
 
         fun polylineTapped(id: String) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("polylineTapped", id)
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("polylineTapped", id)
         }
 
         fun polygonTapped(id: String) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("polygonTapped", id)
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("polygonTapped", id)
         }
 
         fun cameraPositionChanged(pos: CameraPosition?) {
             pos?.let { posCurrent ->
-                GoogleMapFlutterPlugin.channel.invokeMethod("cameraPositionChanged", mapOf(
+                GoogleMapViewFlutterPlugin.channel.invokeMethod("cameraPositionChanged", mapOf(
                         "latitude" to posCurrent.target.latitude,
                         "longitude" to posCurrent.target.longitude,
                         "zoom" to posCurrent.zoom,
@@ -109,7 +110,7 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
             var verticalAccuracy = 0.0f
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 verticalAccuracy = loc.verticalAccuracyMeters
-            GoogleMapFlutterPlugin.channel.invokeMethod("locationUpdated", mapOf(
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("locationUpdated", mapOf(
                     "latitude" to loc.latitude,
                     "longitude" to loc.longitude,
                     "time" to loc.time,
@@ -122,20 +123,20 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         }
 
         fun infoWindowTapped(id: String) {
-            GoogleMapFlutterPlugin.channel.invokeMethod("infoWindowTapped", id)
+            GoogleMapViewFlutterPlugin.channel.invokeMethod("infoWindowTapped", id)
         }
 
         fun getAssetFileDecriptor(asset: String): AssetFileDescriptor {
-            val assetManager = GoogleMapFlutterPlugin.registrar.context().assets
-            val key = GoogleMapFlutterPlugin.registrar.lookupKeyForAsset(asset)
+            val assetManager = GoogleMapViewFlutterPlugin.registrar.context().assets
+            val key = GoogleMapViewFlutterPlugin.registrar.lookupKeyForAsset(asset)
             return assetManager.openFd(key)
         }
 
         fun indoorBuildingActivated(indoorBuilding: IndoorBuilding?) {
             if (indoorBuilding == null) {
-                GoogleMapFlutterPlugin.channel.invokeMethod("indoorBuildingActivated", null)
+                GoogleMapViewFlutterPlugin.channel.invokeMethod("indoorBuildingActivated", null)
             } else {
-                GoogleMapFlutterPlugin.channel.invokeMethod("indoorBuildingActivated", mapOf(
+                GoogleMapViewFlutterPlugin.channel.invokeMethod("indoorBuildingActivated", mapOf(
                         "underground" to indoorBuilding.isUnderground,
                         "defaultIndex" to indoorBuilding.defaultLevelIndex,
                         "levels" to mappingIndoorLevels(indoorBuilding.levels)))
@@ -144,9 +145,9 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
 
         fun indoorLevelActivated(level: IndoorLevel?) {
             if (level == null) {
-                GoogleMapFlutterPlugin.channel.invokeMethod("indoorLevelActivated", null)
+                GoogleMapViewFlutterPlugin.channel.invokeMethod("indoorLevelActivated", null)
             } else {
-                GoogleMapFlutterPlugin.channel.invokeMethod("indoorLevelActivated", mappingIndoorLevel(level))
+                GoogleMapViewFlutterPlugin.channel.invokeMethod("indoorLevelActivated", mappingIndoorLevel(level))
             }
         }
 
@@ -169,10 +170,6 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         this.left = left
         this.right = right
         this.bottom = bottom
-    }
-
-    override fun onMapLoaded() {
-        GoogleMapFlutterPlugin.channel.invokeMethod("onMapReady" , null)
     }
 
     @SuppressLint("MissingPermission")
@@ -262,6 +259,7 @@ class MapView() : OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
         })
 
         googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(initialCameraPosition))
+        GoogleMapViewFlutterPlugin.channel.invokeMethod("onMapReady" , null)
     }
 
     fun handleSetCamera(map: Map<String, Any>) {

@@ -12,21 +12,21 @@ import 'polyline.dart';
 import 'location.dart';
 import 'map_options.dart';
 import 'map_controller.dart';
-import 'google_map_flutter.dart';
+import 'google_map_view_flutter.dart';
 
 class MapView extends StatefulWidget
     implements ListenerController, GetListener {
   final double width;
   final double height;
   final EdgeInsets padding;
-  _MapView state;
   Color backgroundColor = Colors.white;
   bool isReady = false;
   bool isLoading = false;
+  _MapView state;
   final MapOptions mapOptions;
-  final MapController mapController;
+  MapController mapController;
   final LocationCallBack locationUpdated;
-  final VoidCallback onMapReady;
+  final ReadyCallBack onMapReady;
   final MarkerCallBack annotationTapped;
   final AnnotationCallBack annotationDragStart;
   final AnnotationCallBack annotationDragEnd;
@@ -55,7 +55,6 @@ class MapView extends StatefulWidget
       this.width,
       this.height,
       this.backgroundColor,
-      this.mapController,
       this.locationUpdated,
       this.onMapReady,
       this.annotationTapped,
@@ -70,29 +69,27 @@ class MapView extends StatefulWidget
       this.cameraPositionChanged,
       this.indoorBuildingActivated,
       this.indoorLevelActivated}) {
-    GoogleMapFlutter.channel.setMethodCallHandler(_handleMethod);
-    mapController?.setOnListener(this);
+    GoogleMapViewFlutter.channel.setMethodCallHandler(_handleMethod);
   }
 
   void dismiss() {
     _annotations.clear();
     _polylines.clear();
     _polygons.clear();
-    GoogleMapFlutter.channel.invokeMethod('dismiss');
-    state?.onDismiss();
+    GoogleMapViewFlutter.channel.invokeMethod('dismiss');
   }
 
   @override
   void setMarkers(List<Marker> annotations) {
     _annotations.clear();
     annotations.forEach((a) => _annotations[a.id] = a);
-    GoogleMapFlutter.channel.invokeMethod('setAnnotations',
+    GoogleMapViewFlutter.channel.invokeMethod('setAnnotations',
         annotations.map((a) => a.toMap()).toList(growable: false));
   }
 
   @override
   void clearedAnnotations() {
-    GoogleMapFlutter.channel.invokeMethod('clearAnnotations');
+    GoogleMapViewFlutter.channel.invokeMethod('clearAnnotations');
     _annotations.clear();
   }
 
@@ -103,14 +100,15 @@ class MapView extends StatefulWidget
     }
 
     _annotations.remove(marker.id);
-    GoogleMapFlutter.channel.invokeMethod('removeAnnotation', marker.toMap());
+    GoogleMapViewFlutter.channel
+        .invokeMethod('removeAnnotation', marker.toMap());
   }
 
   @override
   void setPolylines(List<Polyline> polylines) {
     _polylines.clear();
     polylines.forEach((a) => _polylines[a.id] = a);
-    GoogleMapFlutter.channel.invokeMethod('setPolylines',
+    GoogleMapViewFlutter.channel.invokeMethod('setPolylines',
         polylines.map((a) => a.toMap()).toList(growable: false));
   }
 
@@ -121,12 +119,12 @@ class MapView extends StatefulWidget
     }
 
     _annotations[marker.id] = marker;
-    GoogleMapFlutter.channel.invokeMethod('addAnnotation', marker.toMap());
+    GoogleMapViewFlutter.channel.invokeMethod('addAnnotation', marker.toMap());
   }
 
   @override
   void clearedPolylines() {
-    GoogleMapFlutter.channel.invokeMethod('clearPolylines');
+    GoogleMapViewFlutter.channel.invokeMethod('clearPolylines');
     _polylines.clear();
   }
 
@@ -137,7 +135,7 @@ class MapView extends StatefulWidget
     }
 
     _polylines[polyline.id] = polyline;
-    GoogleMapFlutter.channel.invokeMethod('addPolyline', polyline.toMap());
+    GoogleMapViewFlutter.channel.invokeMethod('addPolyline', polyline.toMap());
   }
 
   @override
@@ -147,20 +145,21 @@ class MapView extends StatefulWidget
     }
 
     _polylines.remove(polyline.id);
-    GoogleMapFlutter.channel.invokeMethod('removePolyline', polyline.toMap());
+    GoogleMapViewFlutter.channel
+        .invokeMethod('removePolyline', polyline.toMap());
   }
 
   @override
   void setPolygons(List<Polygon> polygons) {
     _polygons.clear();
     polygons.forEach((a) => _polygons[a.id] = a);
-    GoogleMapFlutter.channel.invokeMethod(
+    GoogleMapViewFlutter.channel.invokeMethod(
         'setPolygons', polygons.map((a) => a.toMap()).toList(growable: false));
   }
 
   @override
   void clearedPolygons() {
-    GoogleMapFlutter.channel.invokeMethod('clearPolygons');
+    GoogleMapViewFlutter.channel.invokeMethod('clearPolygons');
     _polygons.clear();
   }
 
@@ -170,7 +169,7 @@ class MapView extends StatefulWidget
       return;
     }
     _polygons[polygon.id] = polygon;
-    GoogleMapFlutter.channel.invokeMethod('addPolygon', polygon.toMap());
+    GoogleMapViewFlutter.channel.invokeMethod('addPolygon', polygon.toMap());
   }
 
   @override
@@ -180,7 +179,7 @@ class MapView extends StatefulWidget
     }
 
     _polygons.remove(polygon.id);
-    GoogleMapFlutter.channel.invokeMethod('removePolygon', polygon.toMap());
+    GoogleMapViewFlutter.channel.invokeMethod('removePolygon', polygon.toMap());
   }
 
   @override
@@ -202,7 +201,8 @@ class MapView extends StatefulWidget
     switch (call.method) {
       case 'onMapReady':
         state?.onReady();
-        onMapReady?.call();
+        mapController = MapController(this);
+        onMapReady?.call(mapController);
 
         break;
       case 'locationUpdated':
@@ -298,10 +298,9 @@ class MapView extends StatefulWidget
 
         break;
       case 'cameraPositionChanged':
-        cameraPositionChanged
-            ?.call(CameraPosition.fromMap(call.arguments));
+        cameraPositionChanged?.call(CameraPosition.fromMap(call.arguments));
 
-		break;
+        break;
       case 'indoorBuildingActivated':
         if (call.arguments == null) {
           indoorBuildingActivated?.call(null);
@@ -362,6 +361,13 @@ class _MapView extends State<MapView> {
     });
   }
 
+  @override
+  void dispose() {
+    onDismiss();
+    widget.dismiss();
+    super.dispose();
+  }
+
   void onReady() {
     setState(() {
       widget.isLoading = false;
@@ -388,7 +394,7 @@ class _MapView extends State<MapView> {
 
     print(widget.mapOptions.toMap());
 
-    return GoogleMapFlutter.channel.invokeMethod('show', {
+    return GoogleMapViewFlutter.channel.invokeMethod('show', {
       'mapOptions': widget.mapOptions.toMap(),
       'actions': actions,
       'padding': padding
@@ -397,11 +403,37 @@ class _MapView extends State<MapView> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: widget.padding,
-      width: widget.width,
-      height: widget.height,
-      color: widget.isReady ? Colors.transparent : widget.backgroundColor,
+    return GestureDetector(
+      onTapUp: (detail) {
+        print('onTapUp');
+      },
+      onTapDown: (detail) {
+        print('onTapDown');
+      },
+      onPanUpdate: (detail) {
+        print('onPanUpdate');
+      },
+      onPanStart: (detail) {
+        print('onPanStart');
+      },
+      onPanCancel: () {
+        print('onPanCancel');
+      },
+      onPanDown: (detail) {
+        print('onPanDown');
+      },
+      onPanEnd: (detail) {
+        print('onPanEnd');
+      },
+      onTapCancel: () {
+        print('onTapCancel');
+      },
+      child: Container(
+        padding: widget.padding,
+        width: widget.width,
+        height: widget.height,
+        color: widget.isReady ? Colors.transparent : widget.backgroundColor,
+      ),
     );
   }
 }

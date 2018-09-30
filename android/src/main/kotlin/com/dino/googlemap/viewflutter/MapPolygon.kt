@@ -1,4 +1,4 @@
-package com.dino.googlemapflutter
+package com.dino.googlemap.viewflutter
 
 import com.google.android.gms.maps.model.LatLng
 

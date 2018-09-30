@@ -1,5 +1,6 @@
 
 import 'package:flutter/services.dart';
+import 'map_controller.dart';
 import 'indoor_building.dart';
 import 'camera_position.dart';
 import 'polygon.dart';
@@ -15,8 +16,9 @@ typedef PolygonCallBack = void Function(Polygon);
 typedef CameraPositionCallBack = void Function(CameraPosition);
 typedef IndoorBuildingCallBack = void Function(IndoorBuilding);
 typedef IndoorLevelCallBack = void Function(IndoorLevel);
+typedef ReadyCallBack = void Function(MapController);
 
-class GoogleMapFlutter {
-  static const MethodChannel _channel = const MethodChannel('com.dino.googlemapflutter');
+class GoogleMapViewFlutter {
+  static const MethodChannel _channel = const MethodChannel('com.dino.googlemap.viewflutter');
   static get channel => _channel;
 }

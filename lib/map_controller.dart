@@ -5,12 +5,17 @@ import 'location.dart';
 import 'marker.dart';
 import 'polygon.dart';
 import 'polyline.dart';
-import 'google_map_flutter.dart';
+import 'google_map_view_flutter.dart';
 
 class MapController {
   ListenerController listenerController;
   GetListener getListener;
   MapView mMap;
+
+  MapController(MapView controller) {
+	this.listenerController = controller;
+	this.getListener = controller;
+  }
 
   void setMarkers(List<Marker> annotations) {
     listenerController?.setMarkers(annotations);
@@ -61,36 +66,36 @@ class MapController {
   }
 
   void zoomToFit({int padding: 50}) {
-    GoogleMapFlutter.channel.invokeMethod('zoomToFit', padding);
+    GoogleMapViewFlutter.channel.invokeMethod('zoomToFit', padding);
   }
 
   void zoomToAnnotations(List<String> annotationIds, {double padding: 50.0}) {
-    GoogleMapFlutter.channel.invokeMethod('zoomToAnnotations',
+    GoogleMapViewFlutter.channel.invokeMethod('zoomToAnnotations',
         {"annotations": annotationIds, "padding": padding});
   }
 
   void zoomToPolylines(List<String> polylines, {double padding: 50.0}) {
-    GoogleMapFlutter.channel.invokeMethod(
+    GoogleMapViewFlutter.channel.invokeMethod(
         'zoomToPolylines', {"polylines": polylines, "padding": padding});
   }
 
   void zoomToPolygons(List<String> polygonsIds, {double padding: 50.0}) {
-    GoogleMapFlutter.channel.invokeMethod(
+    GoogleMapViewFlutter.channel.invokeMethod(
         'zoomToPolygons', {"polygons": polygonsIds, "padding": padding});
   }
 
   void setCameraPosition(CameraPosition cameraPosition) {
-    GoogleMapFlutter.channel.invokeMethod("setCamera", cameraPosition.toMap());
+    GoogleMapViewFlutter.channel.invokeMethod("setCamera", cameraPosition.toMap());
   }
 
   Future<Location> get centerLocation async {
-    Map locationMap = await GoogleMapFlutter.channel.invokeMethod("getCenter");
+    Map locationMap = await GoogleMapViewFlutter.channel.invokeMethod("getCenter");
 
     return new Location(locationMap["latitude"], locationMap["longitude"]);
   }
 
   Future<double> get zoomLevel async {
-    return await GoogleMapFlutter.channel.invokeMethod("getZoomLevel");
+    return await GoogleMapViewFlutter.channel.invokeMethod("getZoomLevel");
   }
 
   Future<List<Marker>> get visibleAnnotations async {
@@ -99,7 +104,7 @@ class MapController {
     }
 
     List<dynamic> ids =
-        await GoogleMapFlutter.channel.invokeMethod("getVisibleMarkers");
+        await GoogleMapViewFlutter.channel.invokeMethod("getVisibleMarkers");
     var annotations = <Marker>[];
 
     for (var id in ids) {
@@ -116,7 +121,7 @@ class MapController {
     }
 
     List<dynamic> ids =
-        await GoogleMapFlutter.channel.invokeMethod("getVisiblePolylines");
+        await GoogleMapViewFlutter.channel.invokeMethod("getVisiblePolylines");
     var polylines = <Polyline>[];
 
     for (var id in ids) {
@@ -133,7 +138,7 @@ class MapController {
     }
 
     List<dynamic> ids =
-        await GoogleMapFlutter.channel.invokeMethod("getVisiblePolygons");
+        await GoogleMapViewFlutter.channel.invokeMethod("getVisiblePolygons");
     var polygons = <Polygon>[];
 
     for (var id in ids) {
@@ -142,11 +147,6 @@ class MapController {
     }
 
     return polygons;
-  }
-
-  void setOnListener(MapView controller) {
-    this.listenerController = controller;
-    this.getListener = controller;
   }
 }
 

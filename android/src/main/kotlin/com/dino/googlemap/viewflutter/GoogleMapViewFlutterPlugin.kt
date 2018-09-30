@@ -1,13 +1,8 @@
-package com.dino.googlemapflutter
+package com.dino.googlemap.viewflutter
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.RelativeLayout
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.GoogleMap
 import io.flutter.app.FlutterFragmentActivity
@@ -17,9 +12,9 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.PluginRegistry.Registrar
 
-class GoogleMapFlutterPlugin : MethodCallHandler {
-    private var mapFragment: TouchSupportMapFragment? = null
-    private lateinit var mapView: MapView
+class GoogleMapViewFlutterPlugin : MethodCallHandler {
+    private var frameLayout: FrameLayout? = null
+    private var mapView: MapView? = null
     private val mapTypeMapping: HashMap<String, Int> = hashMapOf(
             "none" to GoogleMap.MAP_TYPE_NONE,
             "normal" to GoogleMap.MAP_TYPE_NORMAL,
@@ -29,24 +24,16 @@ class GoogleMapFlutterPlugin : MethodCallHandler {
     )
 
     companion object {
-        val PermissionRequest: Int = 1
         lateinit var channel: MethodChannel
         const val REQUEST_GOOGLE_PLAY_SERVICES = 1000
         lateinit var registrar: Registrar
 
         @JvmStatic
         fun registerWith(registrar: Registrar): Unit {
-            GoogleMapFlutterPlugin.registrar = registrar
-            (GoogleMapFlutterPlugin.registrar.activity() as? FlutterFragmentActivity)?.flutterView?.enableTransparentBackground()
-            channel = MethodChannel(registrar.messenger(), "com.dino.googlemapflutter")
-            channel.setMethodCallHandler(GoogleMapFlutterPlugin())
-
-            if (ContextCompat.checkSelfPermission(registrar.context(), Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                val array = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION)
-                ActivityCompat.requestPermissions(registrar.activity(), array, PermissionRequest)
-            }
+            GoogleMapViewFlutterPlugin.registrar = registrar
+            (GoogleMapViewFlutterPlugin.registrar.activity() as? FlutterFragmentActivity)?.flutterView?.enableTransparentBackground()
+            channel = MethodChannel(registrar.messenger(), "com.dino.googlemap.viewflutter")
+            channel.setMethodCallHandler(GoogleMapViewFlutterPlugin())
         }
 
         fun getDensity(context: Context): Float {
@@ -64,7 +51,7 @@ class GoogleMapFlutterPlugin : MethodCallHandler {
     override fun onMethodCall(call: MethodCall, result: Result): Unit {
         when {
             call.method == "show" -> {
-                (GoogleMapFlutterPlugin.registrar.activity() as? FlutterFragmentActivity)?.let { fragmentActivity ->
+                (GoogleMapViewFlutterPlugin.registrar.activity() as? FlutterFragmentActivity)?.let { fragmentActivity ->
                     val code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(fragmentActivity)
 
                     if (GoogleApiAvailability.getInstance().showErrorDialogFragment(fragmentActivity, code, REQUEST_GOOGLE_PLAY_SERVICES)) {
@@ -92,14 +79,14 @@ class GoogleMapFlutterPlugin : MethodCallHandler {
                     val leftMargin = convertPixtoDip(fragmentActivity, padding["left"]!!.toInt())
                     val rightMargin = convertPixtoDip(fragmentActivity, padding["right"]!!.toInt())
 
-                    val frameLayout = FrameLayout(fragmentActivity)
-                    frameLayout.id = R.id.map_fragment
+                    frameLayout = FrameLayout(fragmentActivity)
+                    frameLayout?.id = R.id.map_fragment
                     fragmentActivity.addContentView(frameLayout, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
                     mapView = MapView(fragmentActivity)
-                    mapView.setPadding(leftMargin, topMargin, rightMargin, bottomMargin)
-                    mapFragment = TouchSupportMapFragment()
-                    mapFragment?.getMapAsync(mapView)
+                    mapView?.setPadding(leftMargin, topMargin, rightMargin, bottomMargin)
+                    val mapFragment = TouchSupportMapFragment()
+                    mapFragment.getMapAsync(mapView)
 
                     val transaction = fragmentActivity.supportFragmentManager.beginTransaction()
                     transaction.replace(R.id.map_fragment, mapFragment)
@@ -107,8 +94,11 @@ class GoogleMapFlutterPlugin : MethodCallHandler {
                     fragmentActivity.flutterView.bringToFront()
 
                     fragmentActivity.flutterView.setOnTouchListener { v, event ->
-                        val bmp = fragmentActivity.flutterView.bitmap
-                        mapFragment?.mTouchView?.dispatchTouchEvent(event)
+                        //val bmp = fragmentActivity.flutterView.bitmap
+
+                        if (MapView.attachTouch) {
+                            mapFragment.mTouchView.dispatchTouchEvent(event)
+                        }
 
                         v.onTouchEvent(event)
                     }
@@ -118,92 +108,96 @@ class GoogleMapFlutterPlugin : MethodCallHandler {
                 }
             }
             call.method == "dismiss" -> {
-                //mapActivity?.finish()
+                frameLayout?.let {
+                    (it.parent as? ViewGroup)?.removeView(it)
+                }
+
+                mapView = null
                 result.success(true)
                 return
             }
             call.method == "getZoomLevel" -> {
-                val zoom = mapView.zoomLevel
+                val zoom = mapView?.zoomLevel
                 result.success(zoom)
             }
             call.method == "getCenter" -> {
-                val center = mapView.target
-                result.success(mapOf("latitude" to center.latitude,
-                        "longitude" to center.longitude))
+                val center = mapView?.target
+                result.success(mapOf("latitude" to center?.latitude,
+                        "longitude" to center?.longitude))
             }
             call.method == "setCamera" -> {
-                mapView.handleSetCamera(call.arguments as Map<String, Any>)
+                mapView?.handleSetCamera(call.arguments as Map<String, Any>)
                 result.success(true)
             }
             call.method == "zoomToAnnotations" -> {
-                mapView.handleZoomToAnnotations(call.arguments as Map<String, Any>)
+                mapView?.handleZoomToAnnotations(call.arguments as Map<String, Any>)
                 result.success(true)
             }
             call.method == "zoomToPolylines" -> {
-                mapView.handleZoomToPolylines(call.arguments as Map<String, Any>)
+                mapView?.handleZoomToPolylines(call.arguments as Map<String, Any>)
                 result.success(true)
             }
             call.method == "zoomToPolygons" -> {
-                mapView.handleZoomToPolygons(call.arguments as Map<String, Any>)
+                mapView?.handleZoomToPolygons(call.arguments as Map<String, Any>)
                 result.success(true)
             }
             call.method == "zoomToFit" -> {
-                mapView.zoomToFit(call.arguments as Int)
+                mapView?.zoomToFit(call.arguments as Int)
                 result.success(true)
             }
             call.method == "getVisibleMarkers" -> {
-                val visibleMarkerIds = mapView.visibleMarkers
+                val visibleMarkerIds = mapView?.visibleMarkers
                 result.success(visibleMarkerIds)
             }
             call.method == "clearAnnotations" -> {
-                mapView.clearMarkers()
+                mapView?.clearMarkers()
                 result.success(true)
             }
             call.method == "setAnnotations" -> {
-                mapView.handleSetAnnotations(call.arguments as List<Map<String, Any>>)
+                mapView?.handleSetAnnotations(call.arguments as List<Map<String, Any>>)
                 result.success(true)
             }
             call.method == "addAnnotation" -> {
-                mapView.handleAddAnnotation(call.arguments as Map<String, Any>)
+                mapView?.handleAddAnnotation(call.arguments as Map<String, Any>)
             }
             call.method == "removeAnnotation" -> {
-                mapView.handleRemoveAnnotation(call.arguments as Map<String, Any>)
+                mapView?.handleRemoveAnnotation(call.arguments as Map<String, Any>)
             }
             call.method == "getVisiblePolylines" -> {
-                val visiblePolylineIds = mapView.visiblePolyline
+                val visiblePolylineIds = mapView?.visiblePolyline
                 result.success(visiblePolylineIds)
             }
             call.method == "clearPolylines" -> {
-                mapView.clearPolylines()
+                mapView?.clearPolylines()
                 result.success(true)
             }
             call.method == "setPolylines" -> {
-                mapView.handleSetPolylines(call.arguments as List<Map<String, Any>>)
+                mapView?.handleSetPolylines(call.arguments as List<Map<String, Any>>)
                 result.success(true)
             }
             call.method == "addPolyline" -> {
-                mapView.handleAddPolyline(call.arguments as Map<String, Any>)
+                mapView?.handleAddPolyline(call.arguments as Map<String, Any>)
             }
             call.method == "removePolyline" -> {
-                mapView.handleRemovePolyline(call.arguments as Map<String, Any>)
+                mapView?.handleRemovePolyline(call.arguments as Map<String, Any>)
             }
             call.method == "getVisiblePolygons" -> {
-                val visiblePolygonIds = mapView.visiblePolygon
+                val visiblePolygonIds = mapView?.visiblePolygon
                 result.success(visiblePolygonIds)
             }
             call.method == "clearPolygons" -> {
-                mapView.clearPolygons()
+                mapView?.clearPolygons()
                 result.success(true)
             }
             call.method == "setPolygons" -> {
-                mapView.handleSetPolygons(call.arguments as List<Map<String, Any>>)
+                mapView?.handleSetPolygons(call.arguments as List<Map<String, Any>>)
                 result.success(true)
             }
             call.method == "addPolygon" -> {
-                mapView.handleAddPolygon(call.arguments as Map<String, Any>)
+                mapView?.handleAddPolygon(call.arguments as Map<String, Any>)
             }
             call.method == "removePolygon" -> {
-                mapView.handleRemovePolygon(call.arguments as Map<String, Any>)
+                mapView?.handleRemovePolygon(call.arguments as Map<String, Any>)
             }
             else -> result.notImplemented()
         }

@@ -1,4 +1,4 @@
-name: google_map_flutter
+name: google_map_view_flutter
 description: Google Map Flutter with native sdk
 version: 0.0.1
 author:
@@ -17,8 +17,8 @@ dependencies:
 # The following section is specific to Flutter.
 flutter:
   plugin:
-    androidPackage: com.dino.googlemapflutter
-    pluginClass: GoogleMapFlutterPlugin
+    androidPackage: com.dino.googlemap.viewflutter
+    pluginClass: GoogleMapViewFlutterPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

@@ -1,4 +1,4 @@
-# Google Map Flutter
+# Google Map View Flutter
 
 Google Map Flutter with native sdk
 

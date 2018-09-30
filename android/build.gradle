@@ -1,4 +1,4 @@
-group 'com.dino.googlemapflutter'
+group 'com.dino.googlemap.viewflutter'
 version '1.0-SNAPSHOT'
 
 buildscript {
