@@ -26,7 +26,7 @@ class MapController {
   }
 
   void addMarker(Marker marker) {
-    listenerController?.clearedAnnotations();
+    listenerController?.addedMarker(marker);
   }
 
   void removeMarker(Marker marker) {
